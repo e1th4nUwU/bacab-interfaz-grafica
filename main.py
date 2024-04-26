@@ -7,13 +7,16 @@ import tkinter, tkintermapview
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Global variable initialization
+# Inicialización de variables globales
 arduino_conn = None
 status_label = None
 frame_00 = None
 combobox_ports = None
 
 def main():
+    """
+    Función principal para iniciar la aplicación.
+    """
     try:
         app = create_main_window()
         app.mainloop()
@@ -21,17 +24,34 @@ def main():
         print("Error caught in main loop:")
         traceback.print_exc()
 
-# Crear una función para actualizar la etiqueta de estado de la UI
 def update_status(status):
+    """
+    Actualiza la etiqueta de estado de la interfaz de usuario.
+
+    Args:
+        status (str): El nuevo estado a mostrar.
+    """
     status_label.configure(text=status)
 
 def update_sensor_data(data):
-    # Esta función será llamada con los datos recibidos del Arduino.
-    # Aquí actualizamos los widgets de la UI con los nuevos datos.
-    # Debes asegurarte de que esta actualización se ejecute en el hilo principal.
+    """
+    Actualiza los datos del sensor en la interfaz de usuario.
+
+    Esta función será llamada con los datos recibidos del Arduino.
+    Aquí se actualizan los widgets de la interfaz de usuario con los nuevos datos.
+
+    Args:
+        data (dict): Los nuevos datos del sensor.
+    """
     frame_00.update_sensor_data(data)
 
 def create_main_window():
+    """
+    Crea y configura la ventana principal de la aplicación.
+
+    Returns:
+        tk.Tk: La ventana principal de la aplicación.
+    """
     global arduino_conn, combobox_ports, status_label, frame_00
 
     # Configuración inicial de la ventana principal
@@ -43,11 +63,7 @@ def create_main_window():
     main_frame = ctk.CTkFrame(master=app, corner_radius=10)
     main_frame.pack(fill="both", expand=True)
     main_frame.configure(fg_color="black")  # Fondo negro
-    # main_frame.rowconfigure(0, weight=1)  # Hace que la primera fila crezca con la ventana
-    # main_frame.columnconfigure(0, weight=1)  # Hace que la primera columna crezca con la ventana
 
-    # Configuración del grid dentro del frame principal
-    # Configurar los pesos para responsividad
     rows = 2
     columns = 3
     for row in range(rows):
@@ -59,7 +75,7 @@ def create_main_window():
     frame_00 = SensorDisplay(main_frame)
     frame_00.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
 
-    # Instantiate ArduinoConnection with proper callbacks
+    # Instancia de ArduinoConnection con los callbacks adecuados
     arduino_conn = ArduinoConnection(update_status, update_sensor_data)
 
     frame_02 = ctk.CTkFrame(master=main_frame, corner_radius=10)
@@ -84,12 +100,12 @@ def create_main_window():
     button_disconnect = ctk.CTkButton(frame_10, text="Desconectar", command=lambda: disconnect_device())
     button_disconnect.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
 
-    global status_label
     # Etiqueta de estado de la conexión
+    global status_label
     status_label = ctk.CTkLabel(frame_10, text="Desconectado")
     status_label.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
 
-    # Función wrapper para el botón de desconexión
+    # Función envolvente para el botón de desconexión
     def disconnect_device():
         if arduino_conn:
             arduino_conn.disconnect()
@@ -103,48 +119,34 @@ def create_main_window():
     frame_label = ctk.CTkLabel(master=frame_11, text=" GRAFICAS ")
     frame_label.pack()
 
-    # def create_plot(frame):
-    #     fig, ax = plt.subplots()
-    #     ax.plot([1, 2, 3, 4, 5], [1, 4, 9, 16, 25])  # Ejemplo de datos para la gráfica
-
-    #     canvas = FigureCanvasTkAgg(fig, master=frame)  # A Tk drawing area
-    #     canvas.draw()
-    #     canvas.get_tk_widget().pack(fill='both', expand=True)
-    
-    # create_plot(frame_11)  # Aquí se agrega la gráfica
-    # ======== Finaliza zona graficas ==========
-
     # ======== MAPA ========
-    frame_12 = ShowMap(main_frame)#ctk.CTkFrame(master=main_frame, corner_radius=10)
+    frame_12 = ShowMap(main_frame)
     frame_12.grid(row=1, column=2, sticky="nsew", padx=10, pady=10)
 
+    # Función para manejar el cierre de la ventana
     def on_closing():
-        global arduino_conn  # Declarar como global para acceder a ella
+        global arduino_conn
         if arduino_conn:
             arduino_conn.disconnect()
         app.destroy()
-        
+
     def update_combobox_ports(new_ports):
         try:
             global combobox_ports
-            # Guarda la configuración actual del grid antes de destruir el combobox
             grid_info = combobox_ports.grid_info()
-            
+
             combobox_ports.destroy()
-            
+
             combobox_ports = ctk.CTkComboBox(frame_10, values=new_ports)
-            # Aplica la misma configuración de grid al nuevo combobox
             combobox_ports.grid(**grid_info)
-            
+
             if new_ports:
                 combobox_ports.set(new_ports[0])
         except Exception as e:
             print("Error updating combobox:", e)
 
-
-    app.protocol("WM_DELETE_WINDOW", on_closing)  # Para manejar el cierre de la ventana
+    app.protocol("WM_DELETE_WINDOW", on_closing)
     return app
 
-# Uso de la función main para iniciar la aplicación
 if __name__ == "__main__":
     main()
